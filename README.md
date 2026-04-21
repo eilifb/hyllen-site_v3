@@ -1,5 +1,6 @@
 Started out as a basic HTML/CSS site but now refactored into React. Made mostly to gain experice with website building and AI.
-Yeah made with AI using cursor. Make of that what you will.
+It requires some assets you would have to get yourself.
+Made using AI with cursor. Make of that what you will.
 
 ## Docker
 
