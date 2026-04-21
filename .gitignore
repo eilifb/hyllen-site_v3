@@ -25,7 +25,7 @@ yarn-error.log*
 
 # specific files
 /react_tldr.md
-
+/todo.md
 
 # copyright
 /public/static/audio

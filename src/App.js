@@ -22,6 +22,10 @@ function App() {
     canvasOffset: { x: 0, y: 0 },
     widestSprite: 0,
     tallestSprite: 0,
+    /** HiDPI: backing store = logical size × pixelRatio */
+    pixelRatio: 1,
+    logicalCanvasW: 0,
+    logicalCanvasH: 0,
   });
   const audioRef = useRef({
     chesto: new Audio('/static/audio/chesto.wav'),
@@ -83,9 +87,14 @@ function App() {
     if (!canvas) return undefined;
     const ctx = canvas.getContext('2d');
     if (!ctx) return undefined;
-    ctx.imageSmoothingEnabled = false;
-
     const state = animationStateRef.current;
+
+    const applyPixelRatioToContext = () => {
+      ctx.imageSmoothingEnabled = false;
+      if (typeof ctx.imageSmoothingQuality === 'string') {
+        ctx.imageSmoothingQuality = 'low';
+      }
+    };
     let rafId = null;
 
     const playSound = (name) => {
@@ -102,10 +111,23 @@ function App() {
     };
 
     const updateLayout = () => {
-      const nextHeight = Math.max(1, Math.ceil(state.tallestSprite * scale));
-      setCanvasHeight(nextHeight);
-      canvas.width = Math.max(1, Math.round(state.widestSprite * scale));
-      canvas.height = nextHeight;
+      const logicalW = Math.max(1, Math.round(state.widestSprite * scale));
+      const logicalH = Math.max(1, Math.ceil(state.tallestSprite * scale));
+      const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
+
+      state.logicalCanvasW = logicalW;
+      state.logicalCanvasH = logicalH;
+      state.pixelRatio = dpr;
+
+      setCanvasHeight(logicalH);
+
+      canvas.width = Math.max(1, Math.round(logicalW * dpr));
+      canvas.height = Math.max(1, Math.round(logicalH * dpr));
+      canvas.style.width = `${logicalW}px`;
+      canvas.style.height = `${logicalH}px`;
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      applyPixelRatioToContext();
     };
 
     const stopAnimation = () => {
@@ -121,11 +143,18 @@ function App() {
       const row = Math.floor(state.currentFrameIndex / state.cols);
       const col = state.currentFrameIndex % state.cols;
 
+      const dpr = state.pixelRatio || 1;
+      const lw = state.logicalCanvasW || canvas.width;
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      applyPixelRatioToContext();
+
       ctx.save();
 
       if (state.isFlipped) {
-        ctx.translate(canvas.width, 0);
+        ctx.translate(lw, 0);
         ctx.scale(-1, 1);
       }
 
@@ -294,14 +323,22 @@ function App() {
       }
     };
 
+    const handleResize = () => {
+      if (!state.widestSprite) return;
+      updateLayout();
+      drawFrame();
+    };
+
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       isMounted = false;
       stopAnimation();
       canvas.removeEventListener('mousedown', handleMouseDown);
       canvas.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('resize', handleResize);
     };
   }, [isMuted, scale]);
 

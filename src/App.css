@@ -208,9 +208,10 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  padding: 2rem 1rem;
+  /* Sit below fixed menu trigger (top ~1rem + ~2.75rem button + gap) */
+  padding: 5rem 1rem 2rem;
 }
 
 .top-section {
@@ -256,7 +257,8 @@ body {
 #sprite-canvas {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
+  /* Promote to own compositor layer; pairs with HiDPI backing store for sharper pixels */
+  transform: translateX(-50%) translateZ(0);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
