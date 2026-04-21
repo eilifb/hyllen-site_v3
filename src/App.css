@@ -1,0 +1,154 @@
+:root {
+  --bg: #f6f6f6;
+  --text: #1b1b1b;
+  --btn-text: #f6f6f6;
+}
+
+[data-theme='dark'] {
+  --bg: #1a1a1a;
+  --text: #f6f6f6;
+  --btn-text: #1a1a1a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-root {
+  min-height: 100vh;
+  position: relative;
+}
+
+.toggles {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 2;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.main-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1rem;
+}
+
+.top-section {
+  width: 100%;
+  max-width: 1100px;
+}
+
+.center-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.hero-logo {
+  max-width: min(500px, 90vw);
+}
+
+.gallery-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.gallery-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.animation-section {
+  width: 100%;
+  max-width: 1100px;
+}
+
+.canvas-container {
+  position: relative;
+  margin-top: 3rem;
+  margin-bottom: 1.25rem;
+}
+
+#sprite-canvas {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#sprite-canvas:hover {
+  cursor: pointer;
+}
+
+.button-row {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.icon-btn,
+.chesto-btn {
+  border: 1px solid transparent;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-btn {
+  background: transparent;
+  padding: 0.375rem 0.75rem;
+}
+
+.button-face {
+  height: 50px;
+}
+
+.pixel-img {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.scaleup-btn:hover {
+  background: darkred;
+}
+
+.scaledown-btn:hover {
+  background: darkblue;
+}
+
+.chesto-btn {
+  background: red;
+  color: var(--btn-text);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 1.25rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.chesto-btn:hover {
+  background: darkred;
+}

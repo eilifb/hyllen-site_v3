@@ -1,0 +1,1 @@
+This was made with cursor by converting an old html site i made a while back. WIP.
