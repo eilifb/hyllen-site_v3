@@ -1,6 +1,14 @@
 import './App.css';
 import { useEffect, useRef, useState } from 'react';
 
+function readInitialThemeMode() {
+  const mode = localStorage.getItem('themeMode');
+  if (mode === 'dark' || mode === 'light' || mode === 'auto') return mode;
+  const legacy = localStorage.getItem('theme');
+  if (legacy === 'dark' || legacy === 'light') return legacy;
+  return 'dark';
+}
+
 function App() {
   const canvasRef = useRef(null);
   const animationStateRef = useRef({
@@ -20,15 +28,36 @@ function App() {
     ikuzeyo: new Audio('/static/audio/ikuzeyo.wav'),
   });
 
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [themeMode, setThemeMode] = useState(readInitialThemeMode);
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('muted') === 'true');
   const [scale, setScale] = useState(2);
   const [canvasHeight, setCanvasHeight] = useState(200);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const themeDropdownRef = useRef(null);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+    const resolve = () => {
+      if (themeMode === 'auto') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      return themeMode;
+    };
+
+    const apply = () => {
+      document.documentElement.setAttribute('data-theme', resolve());
+    };
+
+    apply();
+    localStorage.setItem('themeMode', themeMode);
+
+    if (themeMode !== 'auto') return undefined;
+
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => apply();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [themeMode]);
 
   useEffect(() => {
     localStorage.setItem('muted', String(isMuted));
@@ -36,6 +65,17 @@ function App() {
       sound.muted = isMuted;
     });
   }, [isMuted]);
+
+  useEffect(() => {
+    if (!themeMenuOpen) return undefined;
+    const onPointerDown = (event) => {
+      if (themeDropdownRef.current && !themeDropdownRef.current.contains(event.target)) {
+        setThemeMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [themeMenuOpen]);
 
   useEffect(() => {
     let isMounted = true;
@@ -234,7 +274,6 @@ function App() {
         updateCanvasOffset();
         startAnimation('stance');
       } catch (error) {
-        // Keep page usable even if an asset is missing.
         // eslint-disable-next-line no-console
         console.error('Failed to initialize sprite animation', error);
       }
@@ -268,26 +307,112 @@ function App() {
 
   const canResize = animationStateRef.current.currentAnimation?.string === 'stance';
 
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    setThemeMenuOpen(false);
+  };
+
+  const pickThemeMode = (mode) => {
+    setThemeMode(mode);
+    setThemeMenuOpen(false);
+  };
+
+  const themeToggleIcon =
+    themeMode === 'light' ? 'bi-sun-fill' : themeMode === 'dark' ? 'bi-moon-stars-fill' : 'bi-circle-half';
+
   return (
     <div className="app-root">
-      <div className="toggles">
-        <label className="toggle-row">
-          <input
-            type="checkbox"
-            checked={theme === 'dark'}
-            onChange={(event) => setTheme(event.target.checked ? 'dark' : 'light')}
-          />
-          <span>Dark Mode</span>
-        </label>
-        <label className="toggle-row">
-          <input
-            type="checkbox"
-            checked={!isMuted}
-            onChange={() => setIsMuted((prev) => !prev)}
-          />
-          <span>{isMuted ? 'Muted' : 'Volume On'}</span>
-        </label>
-      </div>
+      <button
+        type="button"
+        className="menu-trigger"
+        onClick={() => setSidebarOpen((open) => !open)}
+        aria-expanded={sidebarOpen}
+        aria-controls="site-sidebar"
+        aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+      >
+        {sidebarOpen ? (
+          <span className="menu-icon-x" aria-hidden>
+            ×
+          </span>
+        ) : (
+          <span className="menu-icon-hamburger" aria-hidden>
+            <span className="menu-bar" />
+            <span className="menu-bar" />
+            <span className="menu-bar" />
+          </span>
+        )}
+      </button>
+
+      <div
+        className={`sidebar-backdrop${sidebarOpen ? ' is-visible' : ''}`}
+        onClick={closeSidebar}
+        aria-hidden={!sidebarOpen}
+      />
+
+      <aside id="site-sidebar" className={`site-sidebar${sidebarOpen ? ' is-open' : ''}`} aria-hidden={!sidebarOpen}>
+        <div className="sidebar-inner">
+          <div className="sidebar-title">Hyllen v0.3</div>
+          <div className="sidebar-sep" role="separator" />
+
+          <div className="sidebar-actions">
+            <button
+              type="button"
+              className="sidebar-action-btn"
+              onClick={() => setIsMuted((prev) => !prev)}
+              aria-pressed={isMuted}
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
+              title={isMuted ? 'Unmute' : 'Mute'}
+            >
+              <i className={`bi ${isMuted ? 'bi-volume-mute-fill' : 'bi-volume-up-fill'}`} aria-hidden />
+            </button>
+
+            <div className="dropdown sidebar-theme-dropdown" ref={themeDropdownRef}>
+              <button
+                type="button"
+                className="sidebar-action-btn dropdown-toggle sidebar-theme-toggle"
+                onClick={() => setThemeMenuOpen((open) => !open)}
+                aria-expanded={themeMenuOpen}
+                aria-haspopup="true"
+                aria-label="Color theme"
+              >
+                <i className={`bi ${themeToggleIcon}`} aria-hidden />
+              </button>
+              <ul className={`dropdown-menu dropdown-menu-end shadow${themeMenuOpen ? ' show' : ''}`}>
+                <li>
+                  <button
+                    type="button"
+                    className={`dropdown-item${themeMode === 'light' ? ' active' : ''}`}
+                    onClick={() => pickThemeMode('light')}
+                  >
+                    <i className="bi bi-sun-fill me-2" aria-hidden />
+                    Light
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    className={`dropdown-item${themeMode === 'dark' ? ' active' : ''}`}
+                    onClick={() => pickThemeMode('dark')}
+                  >
+                    <i className="bi bi-moon-stars-fill me-2" aria-hidden />
+                    Dark
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    className={`dropdown-item${themeMode === 'auto' ? ' active' : ''}`}
+                    onClick={() => pickThemeMode('auto')}
+                  >
+                    <i className="bi bi-circle-half me-2" aria-hidden />
+                    Auto
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </aside>
 
       <main className="main-container">
         <section className="top-section">
