@@ -1,0 +1,30 @@
+# Variables
+USER_NAME = eilifb
+IMAGE_NAME = hyllen-site
+TAG = latest
+IMAGE = $(USER_NAME)/$(IMAGE_NAME):$(TAG)
+CONTAINER_NAME = hyllen-site
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+# current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
+PWD := $(dir $(mkfile_path))
+
+# Build the Docker image
+build:
+# cursor debug thingy
+	@node -e "/* #region agent log */fetch('http://127.0.0.1:7796/ingest/70178dd3-976c-4e2f-a600-5d69868b9991',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'702d70'},body:JSON.stringify({sessionId:'702d70',runId:'pre-fix',hypothesisId:'H1',location:'makefile.mak:build',message:'Starting docker build from make',data:{image:'$(IMAGE)'},timestamp:Date.now()})}).catch(()=>{});/* #endregion */"
+# actual build command
+	docker build -t $(IMAGE) .
+
+# Run the Docker container
+run:
+# cursor debug thingy
+	@node -e "/* #region agent log */fetch('http://127.0.0.1:7796/ingest/70178dd3-976c-4e2f-a600-5d69868b9991',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'702d70'},body:JSON.stringify({sessionId:'702d70',runId:'pre-fix',hypothesisId:'H2',location:'makefile.mak:run',message:'Starting docker run from make',data:{container:'$(CONTAINER_NAME)',ports:'8080:80'},timestamp:Date.now()})}).catch(()=>{});/* #endregion */"
+# actual build command
+	docker run --name $(CONTAINER_NAME) --rm -d -p 8080:80 $(IMAGE)
+
+# Stop and remove the container
+clean:
+	docker rm -f $(CONTAINER_NAME)
+
+push:
+	docker push $(USER_NAME)/$(IMAGE_NAME):$(TAG)
