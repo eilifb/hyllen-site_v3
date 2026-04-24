@@ -1,0 +1,10 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${DOCKER_URL}/${IMAGE_NAME:-hyllen-site}:${TAG:-latest}
+    container_name: ${CONTAINER_NAME:-hyllen-site}
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    restart: unless-stopped
