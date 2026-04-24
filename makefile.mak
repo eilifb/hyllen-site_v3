@@ -1,10 +1,7 @@
 # Variables
-USER_NAME = eilifb
-IMAGE_NAME = hyllen-site
-TAG = latest
-IMAGE = $(USER_NAME)/$(IMAGE_NAME):$(TAG)
-CONTAINER_NAME = hyllen-site
-HOST_PORT = 8080
+-include .env.local
+
+IMAGE=$(DOCKER_URL)/$(IMAGE_NAME):$(TAG)
 SITE_URL = http://localhost:$(HOST_PORT)
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 # current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
@@ -38,6 +35,6 @@ test: build
 	@powershell -NoProfile -Command "Start-Sleep -Seconds 1; Start-Process '$(SITE_URL)'"
 
 push:
-	docker push $(USER_NAME)/$(IMAGE_NAME):$(TAG)
+	docker push $(IMAGE)
 
 .PHONY: build run test clean push
