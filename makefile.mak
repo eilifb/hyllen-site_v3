@@ -12,7 +12,7 @@ build:
 # cursor debug thingy
 	@node -e "/* #region agent log */fetch('http://127.0.0.1:7796/ingest/70178dd3-976c-4e2f-a600-5d69868b9991',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'702d70'},body:JSON.stringify({sessionId:'702d70',runId:'pre-fix',hypothesisId:'H1',location:'makefile.mak:build',message:'Starting docker build from make',data:{image:'$(IMAGE)'},timestamp:Date.now()})}).catch(()=>{});/* #endregion */"
 # actual build command
-	docker build -t $(IMAGE) .
+	docker build -f app/Dockerfile -t $(IMAGE) app
 
 # Run the Docker container
 run:
