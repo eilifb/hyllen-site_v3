@@ -1,18 +1,29 @@
 # Variables
+# Canonical version: repo root `.version` (see scripts/read-version.js).
+# If `.env.local` sets TAG=..., that overrides the default image tag.
 -include .env.local
 
-IMAGE=$(DOCKER_URL)/$(IMAGE_NAME):$(TAG)
+VERSION := $(strip $(shell node scripts/read-version.js 2>NUL))
+TAG ?= $(VERSION)
+IMAGE_TAG ?= $(TAG)
+IMAGE=$(DOCKER_URL)/$(IMAGE_NAME):$(IMAGE_TAG)
+RAW_VERSION := $(if $(REACT_APP_VERSION),$(REACT_APP_VERSION),$(VERSION))
+BUILD_VERSION := $(patsubst v%,%,$(RAW_VERSION))
 SITE_URL = http://localhost:$(HOST_PORT)
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 # current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 PWD := $(dir $(mkfile_path))
 
 # Build the Docker image
-build:
+sync-version:
+	@node scripts/sync-version.js
+
+# Build the Docker image
+build: sync-version
 # cursor debug thingy
 	@node -e "/* #region agent log */fetch('http://127.0.0.1:7796/ingest/70178dd3-976c-4e2f-a600-5d69868b9991',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'702d70'},body:JSON.stringify({sessionId:'702d70',runId:'pre-fix',hypothesisId:'H1',location:'makefile.mak:build',message:'Starting docker build from make',data:{image:'$(IMAGE)'},timestamp:Date.now()})}).catch(()=>{});/* #endregion */"
 # actual build command
-	docker build -f app/Dockerfile -t $(IMAGE) app
+	docker build --build-arg REACT_APP_VERSION=$(BUILD_VERSION) -f app/Dockerfile -t $(IMAGE) .
 
 # Run the Docker container
 run:
@@ -34,7 +45,13 @@ test: build
 	$(MAKE) run
 	@powershell -NoProfile -Command "Start-Sleep -Seconds 1; Start-Process '$(SITE_URL)'"
 
-push:
+verify-version-tag:
+	@node scripts/verify-head-version-tag.js
+
+tag:
+	@node scripts/create-version-tag.js
+
+push: verify-version-tag build
 	docker push $(IMAGE)
 
-.PHONY: build run test clean push
+.PHONY: sync-version upversion build run test clean verify-version-tag tag push

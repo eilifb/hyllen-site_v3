@@ -12,6 +12,7 @@
 # production
 /build
 /app/build
+/app/.env.version
 
 # misc
 .DS_Store

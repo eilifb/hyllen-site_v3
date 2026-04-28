@@ -10,6 +10,7 @@ function readInitialThemeMode() {
 }
 
 function App() {
+  const appVersion = process.env.REACT_APP_VERSION || '0.0.0';
   const canvasRef = useRef(null);
   const animationStateRef = useRef({
     cols: 10,
@@ -388,7 +389,7 @@ function App() {
 
       <aside id="site-sidebar" className={`site-sidebar${sidebarOpen ? ' is-open' : ''}`} aria-hidden={!sidebarOpen}>
         <div className="sidebar-inner">
-          <div className="sidebar-title">Hyllen v0.3</div>
+          <div className="sidebar-title">{`Hyllen v${appVersion}`}</div>
           <div className="sidebar-sep" role="separator" />
 
           <div className="sidebar-actions">

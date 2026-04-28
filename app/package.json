@@ -1,6 +1,6 @@
 {
   "name": "hyllen-site_v3",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -13,6 +13,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "prestart": "node ../scripts/sync-version.js",
+    "prebuild": "node ../scripts/sync-version.js",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

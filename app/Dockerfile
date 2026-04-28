@@ -1,7 +1,7 @@
 FROM node:20-bookworm-slim AS builder
-WORKDIR /app
+WORKDIR /workspace/app
 
-COPY package*.json ./
+COPY app/package*.json ./
 # #region agent log
 RUN node -e "fetch('http://127.0.0.1:7796/ingest/70178dd3-976c-4e2f-a600-5d69868b9991',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'702d70'},body:JSON.stringify({sessionId:'702d70',runId:'pre-fix',hypothesisId:'H3',location:'Dockerfile:npm-ci-start',message:'Starting npm ci in builder image',data:{baseImage:'node:20-bookworm-slim'},timestamp:Date.now()})}).catch(()=>{});"
 # #endregion
@@ -17,13 +17,19 @@ RUN npm config set fetch-retries 5 \
         if [ "$attempt" = "3" ]; then echo "npm ci failed after 3 attempts"; exit 1; fi; \
       done
 
-COPY . .
+COPY scripts /workspace/scripts
+COPY .version /workspace/.version
+COPY app .
+
+ARG REACT_APP_VERSION=latest
+ENV REACT_APP_VERSION=$REACT_APP_VERSION
+
 RUN npm run build
 
 FROM nginx:1.27-alpine
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/build /usr/share/nginx/html
+COPY app/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /workspace/app/build /usr/share/nginx/html
 
 EXPOSE 80
 

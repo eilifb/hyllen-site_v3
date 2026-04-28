@@ -16,4 +16,4 @@ Run the container:
 make run
 ```
 
-Then open `http://localhost:8080`.
+Then open `http://localhost:<port specified in .env file>`.
