@@ -381,6 +381,10 @@ function App() {
         )}
       </button>
 
+      <header className="top-bar" aria-label="Site header">
+        <h1 className="site-title">Hyllen</h1>
+      </header>
+
       <div
         className={`sidebar-backdrop${sidebarOpen ? ' is-visible' : ''}`}
         onClick={closeSidebar}
@@ -453,23 +457,6 @@ function App() {
       </aside>
 
       <main className="main-container">
-        <section className="top-section">
-          <div className="center-row">
-            <img
-              src="/static/images/hyllen-logo-burning.gif"
-              alt="Hyllen logo"
-              className="hero-logo"
-            />
-          </div>
-
-          <div className="gallery-row">
-            <img src="/static/images/hyller/hylle_1.png" alt="Hylle 1" className="gallery-image" />
-            <img src="/static/images/hyller/hylle_2.png" alt="Hylle 2" className="gallery-image" />
-            <img src="/static/images/hyller/hylle_3.png" alt="Hylle 3" className="gallery-image" />
-            <img src="/static/images/hyller/hylle_4.png" alt="Hylle 4" className="gallery-image" />
-          </div>
-        </section>
-
         <section className="animation-section">
           <div className="canvas-container" style={{ height: `${canvasHeight}px` }}>
             <canvas ref={canvasRef} id="sprite-canvas" />
