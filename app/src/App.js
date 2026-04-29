@@ -9,6 +9,13 @@ function readInitialThemeMode() {
   return 'dark';
 }
 
+function getResponsiveDefaultScale() {
+  if (typeof window === 'undefined') return 2;
+  if (window.innerWidth <= 480) return 1.2;
+  if (window.innerWidth <= 768) return 1.6;
+  return 2;
+}
+
 function App() {
   const appVersion = process.env.REACT_APP_VERSION || '0.0.0';
   const canvasRef = useRef(null);
@@ -35,7 +42,7 @@ function App() {
 
   const [themeMode, setThemeMode] = useState(readInitialThemeMode);
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('muted') === 'true');
-  const [scale, setScale] = useState(2);
+  const [scale, setScale] = useState(getResponsiveDefaultScale);
   const [canvasHeight, setCanvasHeight] = useState(200);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
@@ -107,7 +114,8 @@ function App() {
     };
 
     const updateCanvasOffset = () => {
-      canvas.style.left = `${Math.floor(state.canvasOffset.x)}px`;
+      canvas.style.left = '50%';
+      canvas.style.transform = `translateX(calc(-50% + ${Math.floor(state.canvasOffset.x)}px)) translateZ(0)`;
       canvas.style.top = `${Math.floor(state.canvasOffset.y)}px`;
     };
 
@@ -300,6 +308,9 @@ function App() {
         });
 
         if (!isMounted) return;
+        state.canvasOffset.x = 0;
+        state.canvasOffset.y = 0;
+        state.isFlipped = false;
         updateLayout();
         updateCanvasOffset();
         startAnimation('stance');
