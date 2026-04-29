@@ -286,9 +286,8 @@ body {
 
 #sprite-canvas {
   position: absolute;
-  left: 50%;
-  /* Promote to own compositor layer; pairs with HiDPI backing store for sharper pixels */
-  transform: translateX(-50%) translateZ(0);
+  left: 0;
+  transform: none;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }

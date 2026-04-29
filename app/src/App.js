@@ -11,8 +11,7 @@ function readInitialThemeMode() {
 
 function getResponsiveDefaultScale() {
   if (typeof window === 'undefined') return 2;
-  if (window.innerWidth <= 480) return 1.2;
-  if (window.innerWidth <= 768) return 1.6;
+  if (window.innerWidth <= 768) return 1;
   return 2;
 }
 
@@ -96,6 +95,7 @@ function App() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return undefined;
     const state = animationStateRef.current;
+    const snapCssPx = (px, dpr) => Math.round(px * dpr) / dpr;
 
     const applyPixelRatioToContext = () => {
       ctx.imageSmoothingEnabled = false;
@@ -114,9 +114,15 @@ function App() {
     };
 
     const updateCanvasOffset = () => {
-      canvas.style.left = '50%';
-      canvas.style.transform = `translateX(calc(-50% + ${Math.floor(state.canvasOffset.x)}px)) translateZ(0)`;
-      canvas.style.top = `${Math.floor(state.canvasOffset.y)}px`;
+      const dpr = state.pixelRatio || 1;
+      const container = canvas.parentElement;
+      const containerWidth = container ? container.clientWidth : window.innerWidth;
+      const centeredLeft = (containerWidth - state.logicalCanvasW) / 2;
+      const leftPx = snapCssPx(centeredLeft + state.canvasOffset.x, dpr);
+      const topPx = snapCssPx(state.canvasOffset.y, dpr);
+      canvas.style.left = `${leftPx}px`;
+      canvas.style.top = `${topPx}px`;
+      canvas.style.transform = 'none';
     };
 
     const updateLayout = () => {
@@ -167,16 +173,28 @@ function App() {
         ctx.scale(-1, 1);
       }
 
+      // Bleed protection: inset source sampling so neighboring frame pixels
+      // cannot leak at specific DPR/viewport combinations.
+      const srcInset = anim.width > 2 && anim.height > 2 ? 1 : 0;
+      const srcX = Math.floor(col * anim.width) + srcInset;
+      const srcY = Math.floor(row * anim.height) + srcInset;
+      const srcW = Math.max(1, Math.ceil(anim.width - srcInset * 2));
+      const srcH = Math.max(1, Math.ceil(anim.height - srcInset * 2));
+      const dstX = Math.floor((anim.xStart + srcInset) * scale);
+      const dstY = Math.floor((anim.yStart + srcInset) * scale);
+      const dstW = Math.max(1, Math.ceil(srcW * scale));
+      const dstH = Math.max(1, Math.ceil(srcH * scale));
+
       ctx.drawImage(
         anim.sheet,
-        Math.floor(col * anim.width),
-        Math.floor(row * anim.height),
-        Math.ceil(anim.width),
-        Math.ceil(anim.height),
-        Math.floor(anim.xStart * scale),
-        Math.floor(anim.yStart * scale),
-        Math.ceil(anim.width * scale),
-        Math.ceil(anim.height * scale),
+        srcX,
+        srcY,
+        srcW,
+        srcH,
+        dstX,
+        dstY,
+        dstW,
+        dstH,
       );
 
       ctx.restore();
@@ -338,6 +356,7 @@ function App() {
     const handleResize = () => {
       if (!state.widestSprite) return;
       updateLayout();
+      updateCanvasOffset();
       drawFrame();
     };
 
