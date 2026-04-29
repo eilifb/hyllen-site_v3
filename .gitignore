@@ -25,10 +25,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# specific files
+# eilifb stupidity
 /react_tldr.md
 /todo.md
 /local_scripts
+/deploy.md
 
 # copyright
 /app/public/static/audio
