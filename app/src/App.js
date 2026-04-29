@@ -453,6 +453,26 @@ function App() {
               </ul>
             </div>
           </div>
+
+          <div className="sidebar-sep" role="separator" />
+
+          <a
+            className="sidebar-link-btn"
+            href="https://github.com/eilifb/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Open Eilif B GitHub profile"
+          >
+            <span>GitHub</span>
+            <i className="bi bi-github" aria-hidden />
+          </a>
+
+          <div className="sidebar-sep" role="separator" />
+
+          <a className="sidebar-link-btn" href="/projects" aria-label="Open projects page">
+            <span>Projects</span>
+            <i className="bi bi-circle-square" aria-hidden />
+          </a>
         </div>
       </aside>
 
