@@ -53,5 +53,6 @@ tag:
 
 push: verify-version-tag build
 	docker push $(IMAGE)
+	docker push $(DOCKER_URL)/$(IMAGE_NAME):latest
 
 .PHONY: sync-version upversion build run test clean verify-version-tag tag push
