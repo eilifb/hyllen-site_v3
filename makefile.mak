@@ -52,7 +52,9 @@ tag:
 	@node scripts/create-version-tag.js
 
 push: verify-version-tag build
+	@echo Pushing $(IMAGE) to registry
 	docker push $(IMAGE)
+	@echo Pushing $(DOCKER_URL)/$(IMAGE_NAME):latest to registry
 	docker push $(DOCKER_URL)/$(IMAGE_NAME):latest
 
 .PHONY: sync-version upversion build run test clean verify-version-tag tag push
