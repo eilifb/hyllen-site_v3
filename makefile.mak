@@ -1,12 +1,14 @@
 # Variables
 # Canonical version: repo root `.version` (see scripts/read-version.js).
-# If `.env.local` sets TAG=..., that overrides the default image tag.
+# `.env.local` often sets TAG=latest for docker-compose — that must NOT drive registry tags.
 -include .env.local
 
 VERSION := $(strip $(shell node scripts/read-version.js 2>NUL))
-TAG ?= $(VERSION)
-IMAGE_TAG ?= $(TAG)
-IMAGE=$(DOCKER_URL)/$(IMAGE_NAME):$(IMAGE_TAG)
+# Image tag for `make build` / `make push` (defaults to .version). Override: `make push IMAGE_TAG=x`.
+IMAGE_TAG ?= $(VERSION)
+REGISTRY_IMAGE := $(DOCKER_URL)/$(IMAGE_NAME)
+IMAGE := $(REGISTRY_IMAGE):$(IMAGE_TAG)
+LATEST_IMAGE := $(REGISTRY_IMAGE):latest
 RAW_VERSION := $(if $(REACT_APP_VERSION),$(REACT_APP_VERSION),$(VERSION))
 BUILD_VERSION := $(patsubst v%,%,$(RAW_VERSION))
 SITE_URL = http://localhost:$(HOST_PORT)
@@ -23,7 +25,7 @@ build: sync-version
 # cursor debug thingy
 	@node -e "/* #region agent log */fetch('http://127.0.0.1:7796/ingest/70178dd3-976c-4e2f-a600-5d69868b9991',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'702d70'},body:JSON.stringify({sessionId:'702d70',runId:'pre-fix',hypothesisId:'H1',location:'makefile.mak:build',message:'Starting docker build from make',data:{image:'$(IMAGE)'},timestamp:Date.now()})}).catch(()=>{});/* #endregion */"
 # actual build command
-	docker build --build-arg REACT_APP_VERSION=$(BUILD_VERSION) -f app/Dockerfile -t $(IMAGE) .
+	docker build --build-arg REACT_APP_VERSION=$(BUILD_VERSION) -f app/Dockerfile -t $(IMAGE) -t $(LATEST_IMAGE) .
 
 # Run the Docker container
 run:
@@ -54,7 +56,10 @@ tag:
 push: verify-version-tag build
 	@echo Pushing $(IMAGE) to registry
 	docker push $(IMAGE)
-	@echo Pushing $(DOCKER_URL)/$(IMAGE_NAME):latest to registry
-	docker push $(DOCKER_URL)/$(IMAGE_NAME):latest
+	@echo Pushing $(LATEST_IMAGE) to registry
+	docker push $(LATEST_IMAGE)
 
-.PHONY: sync-version upversion build run test clean verify-version-tag tag push
+info:
+	@echo VERSION=$(VERSION) IMAGE_TAG=$(IMAGE_TAG)
+	@echo IMAGE=$(IMAGE) LATEST_IMAGE=$(LATEST_IMAGE)
+.PHONY: sync-version upversion build run test clean verify-version-tag tag push print
