@@ -1,5 +1,8 @@
 import './App.css';
 import { useEffect, useRef, useState } from 'react';
+import { Link, Route, Routes, useLocation } from 'react-router-dom';
+import ProjectsPage from './ProjectsPage';
+import ProjectArticlePage from './ProjectArticlePage';
 
 function readInitialThemeMode() {
   const mode = localStorage.getItem('themeMode');
@@ -16,6 +19,7 @@ function getResponsiveDefaultScale() {
 }
 
 function App() {
+  const location = useLocation();
   const appVersion = process.env.REACT_APP_VERSION || '0.0.0';
   const canvasRef = useRef(null);
   const animationStateRef = useRef({
@@ -87,6 +91,11 @@ function App() {
     document.addEventListener('mousedown', onPointerDown);
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [themeMenuOpen]);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+    setThemeMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     let isMounted = true;
@@ -499,48 +508,59 @@ function App() {
 
           <div className="sidebar-sep" role="separator" />
 
-          <a className="sidebar-link-btn" href="/projects" aria-label="Open projects page">
+          <Link className="sidebar-link-btn" to="/projects" aria-label="Open projects page">
             <span>Projects</span>
             <i className="bi bi-circle-square" aria-hidden />
-          </a>
+          </Link>
         </div>
       </aside>
 
       <main className="main-container">
-        <section className="animation-section">
-          <div className="canvas-container" style={{ height: `${canvasHeight}px` }}>
-            <canvas ref={canvasRef} id="sprite-canvas" />
-          </div>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <div className="home-landing">
+                <section className="animation-section">
+                  <div className="canvas-container" style={{ height: `${canvasHeight}px` }}>
+                    <canvas ref={canvasRef} id="sprite-canvas" />
+                  </div>
 
-          <div className="button-row">
-            <button
-              type="button"
-              className="icon-btn scaledown-btn"
-              onClick={() => canResize && setScale((prev) => Math.max(0.5, prev - 0.5))}
-            >
-              <img src="/static/images/makoto/makoto_face_minus.png" alt="Scale down animation" className="pixel-img button-face" />
-            </button>
-            <button
-              type="button"
-              className="icon-btn scaleup-btn"
-              onClick={() => canResize && setScale((prev) => Math.min(8, prev + 0.5))}
-            >
-              <img src="/static/images/makoto/makoto_face_plus.png" alt="Scale up animation" className="pixel-img button-face" />
-            </button>
-            <button
-              type="button"
-              className="chesto-btn"
-              onClick={() => {
-                if (isMuted) return;
-                const clip = audioRef.current.chesto;
-                clip.currentTime = 0;
-                clip.play().catch(() => {});
-              }}
-            >
-              チェストー！
-            </button>
-          </div>
-        </section>
+                  <div className="button-row">
+                    <button
+                      type="button"
+                      className="icon-btn scaledown-btn"
+                      onClick={() => canResize && setScale((prev) => Math.max(0.5, prev - 0.5))}
+                    >
+                      <img src="/static/images/makoto/makoto_face_minus.png" alt="Scale down animation" className="pixel-img button-face" />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn scaleup-btn"
+                      onClick={() => canResize && setScale((prev) => Math.min(8, prev + 0.5))}
+                    >
+                      <img src="/static/images/makoto/makoto_face_plus.png" alt="Scale up animation" className="pixel-img button-face" />
+                    </button>
+                    <button
+                      type="button"
+                      className="chesto-btn"
+                      onClick={() => {
+                        if (isMuted) return;
+                        const clip = audioRef.current.chesto;
+                        clip.currentTime = 0;
+                        clip.play().catch(() => {});
+                      }}
+                    >
+                      チェストー！
+                    </button>
+                  </div>
+                </section>
+              </div>
+            }
+          />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/projects/:slug" element={<ProjectArticlePage />} />
+        </Routes>
       </main>
     </div>
   );
