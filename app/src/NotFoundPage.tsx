@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { ICON_404_FILENAMES } from './404_icons';
 
 const ICON_BASE = '/static/images/icons/lain/';
@@ -34,12 +33,6 @@ export default function NotFoundPage() {
           onError={() => setShowIcon(false)}
         />
       ) : null}
-
-      {/* <p className="not-found-blurb">
-        <Link className="not-found-home-link" to="/">
-          Back to home
-        </Link>
-      </p> */}
     </section>
   );
 }
