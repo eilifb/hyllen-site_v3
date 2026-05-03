@@ -4,7 +4,8 @@ services:
       context: .
       dockerfile: app/Dockerfile
       args:
-        REACT_APP_VERSION: ${REACT_APP_VERSION:-${TAG:-latest}}
+        VITE_APP_VERSION: ${VITE_APP_VERSION:-${REACT_APP_VERSION:-${TAG:-latest}}}
+        REACT_APP_VERSION: ${REACT_APP_VERSION:-}
     image: ${DOCKER_URL}/${IMAGE_NAME:-hyllen-site}:${TAG:-latest}
     container_name: ${CONTAINER_NAME:-hyllen-site}
     ports:

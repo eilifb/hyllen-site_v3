@@ -2,48 +2,36 @@
   "name": "hyllen-site_v3",
   "version": "0.3.6",
   "private": true,
+  "type": "module",
   "dependencies": {
-    "@mdx-js/mdx": "^3.1.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.9.4"
+  },
+  "devDependencies": {
+    "@mdx-js/rollup": "^3.1.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^13.5.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "react-router-dom": "^7.9.4",
-    "react-scripts": "5.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/mdx": "^2.0.13",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "jsdom": "^29.1.1",
     "remark-frontmatter": "^5.0.0",
-    "remark-mdx": "^3.1.1",
     "remark-mdx-frontmatter": "^5.2.0",
-    "remark-parse": "^11.0.0",
-    "unified": "^11.0.5",
-    "web-vitals": "^2.1.4",
-    "yaml": "^2.8.3"
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
   },
   "scripts": {
-    "prestart": "node ../scripts/sync-version.js && node ../scripts/sync-project-articles.js",
-    "prebuild": "node ../scripts/sync-version.js && node ../scripts/sync-project-articles.js",
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "predev": "node ../scripts/sync-version.js",
+    "prebuild": "node ../scripts/sync-version.js",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest"
   }
 }
