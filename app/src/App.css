@@ -289,6 +289,26 @@ body {
   align-items: center;
 }
 
+.animation-fallback {
+  margin: 2rem 0 0;
+  max-width: 28rem;
+  text-align: center;
+  line-height: 1.45;
+  opacity: 0.85;
+  font-size: 0.95rem;
+}
+
+.icon-fallback.button-face {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .projects-page {
   width: min(900px, 100%);
   margin: 0 auto;
@@ -381,4 +401,9 @@ body {
 
 .chesto-btn:hover {
   background: darkred;
+}
+
+.chesto-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

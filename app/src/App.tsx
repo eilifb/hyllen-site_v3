@@ -1,11 +1,18 @@
 import './App.css';
-import { useEffect, useRef, useState, type MutableRefObject } from 'react';
+import {
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react';
 import { Link, Route, Routes, useLocation } from 'react-router-dom';
 import ProjectsPage from './ProjectsPage';
 import ProjectArticlePage from './ProjectArticlePage';
 
 type ThemeMode = 'dark' | 'light' | 'auto';
 type SoundName = 'chesto' | 'ikuzeyo';
+type LandingSprites = 'loading' | 'ready' | 'missing';
 
 interface Animation {
   string: string;
@@ -71,20 +78,23 @@ function App() {
     logicalCanvasW: 0,
     logicalCanvasH: 0,
   });
-  const audioRef = useRef<Record<SoundName, HTMLAudioElement>>({
-    chesto: new Audio('/static/audio/chesto.wav'),
-    ikuzeyo: new Audio('/static/audio/ikuzeyo.wav'),
-  });
+  const audioRef = useRef<Partial<Record<SoundName, HTMLAudioElement>>>({});
 
   const [themeMode, setThemeMode] = useState<ThemeMode>(readInitialThemeMode);
   const [isMuted, setIsMuted] = useState<boolean>(
     () => localStorage.getItem('muted') === 'true',
   );
   const [scale, setScale] = useState<number>(getResponsiveDefaultScale);
-  const [canvasHeight, setCanvasHeight] = useState<number>(200);
+  const [canvasHeight, setCanvasHeight] = useState<number>(0);
+  const [landingSprites, setLandingSprites] = useState<LandingSprites>('loading');
+  const [minusFaceOk, setMinusFaceOk] = useState(true);
+  const [plusFaceOk, setPlusFaceOk] = useState(true);
+  const [, bumpAudioUi] = useReducer((n: number) => n + 1, 0);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState<boolean>(false);
   const themeDropdownRef = useRef<HTMLDivElement | null>(null);
+  const isMutedRef = useRef(isMuted);
+  isMutedRef.current = isMuted;
 
   useEffect(() => {
     const resolve = (): 'dark' | 'light' => {
@@ -112,9 +122,44 @@ function App() {
   }, [themeMode]);
 
   useEffect(() => {
+    const clips: Partial<Record<SoundName, HTMLAudioElement>> = {};
+    const removeIfCurrent = (key: SoundName, el: HTMLAudioElement) => {
+      const map = audioRef.current;
+      if (map[key] === el) {
+        delete map[key];
+      }
+    };
+    for (const key of ['chesto', 'ikuzeyo'] as const) {
+      const audio = new Audio(`/static/audio/${key}.wav`);
+      audio.addEventListener(
+        'error',
+        () => {
+          removeIfCurrent(key, audio);
+          bumpAudioUi();
+        },
+        { once: true },
+      );
+      clips[key] = audio;
+    }
+    audioRef.current = clips;
+    Object.values(clips).forEach((sound) => {
+      if (sound) sound.muted = isMuted;
+    });
+    return () => {
+      Object.values(clips).forEach((a) => {
+        if (a) {
+          a.pause();
+          a.removeAttribute('src');
+        }
+      });
+      audioRef.current = {};
+    };
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('muted', String(isMuted));
     Object.values(audioRef.current).forEach((sound) => {
-      sound.muted = isMuted;
+      if (sound) sound.muted = isMuted;
     });
   }, [isMuted]);
 
@@ -157,7 +202,7 @@ function App() {
     let rafId: number | null = null;
 
     const playSound = (name: SoundName) => {
-      if (isMuted) return;
+      if (isMutedRef.current) return;
       const audio = audioRef.current[name];
       if (!audio) return;
       audio.currentTime = 0;
@@ -305,6 +350,7 @@ function App() {
     const loadDelays = async (jsonPath: string): Promise<number[]> => {
       try {
         const response = await fetch(jsonPath);
+        if (!response.ok) return Array(94).fill(70);
         const delays: unknown = await response.json();
         if (!Array.isArray(delays)) return Array(94).fill(70);
         return delays.map((delay) => parseInt(String(delay), 10));
@@ -354,8 +400,14 @@ function App() {
     };
 
     const initialize = async () => {
+      setLandingSprites('loading');
+      state.animations = {};
+      state.widestSprite = 0;
+      state.tallestSprite = 0;
+      state.currentAnimation = null;
+
       try {
-        const loadedAnimations = await Promise.all([
+        const results = await Promise.allSettled([
           loadSprite('stance', '/static/images/makoto/makoto-stance', 24, 3, 0, 0, () => 'stance'),
           loadSprite('hayate', '/static/images/makoto/makoto-hayate', 0, 0, 0, 93, () => 'stance'),
           loadSprite('startup', '/static/images/makoto/makoto-hayate-startup', 0, 0, 0, 0, () => 'windup', 'ikuzeyo'),
@@ -364,11 +416,24 @@ function App() {
           loadSprite('end', '/static/images/makoto/makoto-hayate-end', 0, 0, 0, 93, () => 'stance', 'chesto'),
         ]);
 
-        loadedAnimations.forEach((anim) => {
-          state.animations[anim.string] = anim;
-          state.tallestSprite = Math.max(state.tallestSprite, anim.height);
-          state.widestSprite = Math.max(state.widestSprite, anim.width);
+        results.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            const anim = result.value;
+            state.animations[anim.string] = anim;
+            state.tallestSprite = Math.max(state.tallestSprite, anim.height);
+            state.widestSprite = Math.max(state.widestSprite, anim.width);
+          }
         });
+
+        const failed = results.filter((r) => r.status === 'rejected').length;
+        if (failed > 0) {
+          console.warn(`[hyllen] ${failed} sprite asset(s) failed to load`);
+        }
+
+        if (!state.animations.stance) {
+          if (isMounted) setLandingSprites('missing');
+          return;
+        }
 
         if (!isMounted) return;
         state.canvasOffset.x = 0;
@@ -377,8 +442,10 @@ function App() {
         updateLayout();
         updateCanvasOffset();
         startAnimation('stance');
+        setLandingSprites('ready');
       } catch (error) {
         console.error('Failed to initialize sprite animation', error);
+        if (isMounted) setLandingSprites('missing');
       }
     };
 
@@ -415,9 +482,11 @@ function App() {
       canvas.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('resize', handleResize);
     };
-  }, [isMuted, scale]);
+  }, [scale]);
 
-  const canResize = animationStateRef.current.currentAnimation?.string === 'stance';
+  const canResize =
+    landingSprites === 'ready' &&
+    animationStateRef.current.currentAnimation?.string === 'stance';
 
   const closeSidebar = () => {
     setSidebarOpen(false);
@@ -574,53 +643,82 @@ function App() {
             element={
               <div className="home-landing">
                 <section className="animation-section">
-                  <div
-                    className="canvas-container"
-                    style={{ height: `${canvasHeight}px` }}
-                  >
-                    <canvas ref={canvasRef} id="sprite-canvas" />
-                  </div>
+                  {landingSprites === 'missing' ? (
+                    <p className="animation-fallback" role="note">
+                      Animation assets are not included in this deployment.
+                    </p>
+                  ) : (
+                    <>
+                      <div
+                        className="canvas-container"
+                        style={{ height: `${canvasHeight}px` }}
+                      >
+                        <canvas ref={canvasRef} id="sprite-canvas" />
+                      </div>
 
-                  <div className="button-row">
-                    <button
-                      type="button"
-                      className="icon-btn scaledown-btn"
-                      onClick={() =>
-                        canResize && setScale((prev) => Math.max(0.5, prev - 0.5))
-                      }
-                    >
-                      <img
-                        src="/static/images/makoto/makoto_face_minus.png"
-                        alt="Scale down animation"
-                        className="pixel-img button-face"
-                      />
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-btn scaleup-btn"
-                      onClick={() =>
-                        canResize && setScale((prev) => Math.min(8, prev + 0.5))
-                      }
-                    >
-                      <img
-                        src="/static/images/makoto/makoto_face_plus.png"
-                        alt="Scale up animation"
-                        className="pixel-img button-face"
-                      />
-                    </button>
-                    <button
-                      type="button"
-                      className="chesto-btn"
-                      onClick={() => {
-                        if (isMuted) return;
-                        const clip = audioRef.current.chesto;
-                        clip.currentTime = 0;
-                        clip.play().catch(() => {});
-                      }}
-                    >
-                      チェストー！
-                    </button>
-                  </div>
+                      <div className="button-row">
+                        <button
+                          type="button"
+                          className="icon-btn scaledown-btn"
+                          aria-label="Scale down animation"
+                          onClick={() =>
+                            canResize && setScale((prev) => Math.max(0.5, prev - 0.5))
+                          }
+                        >
+                          {minusFaceOk ? (
+                            <img
+                              src="/static/images/makoto/makoto_face_minus.png"
+                              alt=""
+                              className="pixel-img button-face"
+                              onError={() => setMinusFaceOk(false)}
+                            />
+                          ) : (
+                            <span className="icon-fallback button-face" aria-hidden>
+                              −
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-btn scaleup-btn"
+                          aria-label="Scale up animation"
+                          onClick={() =>
+                            canResize && setScale((prev) => Math.min(8, prev + 0.5))
+                          }
+                        >
+                          {plusFaceOk ? (
+                            <img
+                              src="/static/images/makoto/makoto_face_plus.png"
+                              alt=""
+                              className="pixel-img button-face"
+                              onError={() => setPlusFaceOk(false)}
+                            />
+                          ) : (
+                            <span className="icon-fallback button-face" aria-hidden>
+                              +
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          className="chesto-btn"
+                          disabled={isMuted || !audioRef.current.chesto}
+                          onClick={() => {
+                            if (isMuted) return;
+                            const clip = audioRef.current.chesto;
+                            if (!clip) return;
+                            clip.currentTime = 0;
+                            clip.play().catch(() => {});
+                          }}
+                          title={
+                            audioRef.current.chesto ? undefined : 'Sound file unavailable'
+                          }
+                        >
+                          チェストー！
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </section>
               </div>
             }

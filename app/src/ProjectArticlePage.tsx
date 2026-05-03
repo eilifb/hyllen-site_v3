@@ -1,4 +1,6 @@
+import { MDXProvider } from '@mdx-js/react';
 import { Link, useParams } from 'react-router-dom';
+import MdxArticleImage from './MdxArticleImage';
 import { getPublishedProjectBySlug } from './projects';
 
 export default function ProjectArticlePage() {
@@ -22,7 +24,9 @@ export default function ProjectArticlePage() {
     <article className="projects-page">
       <h2 className="projects-title">{frontmatter.title}</h2>
       {frontmatter.date ? <p className="project-meta">{frontmatter.date}</p> : null}
-      <Component />
+      <MDXProvider components={{ img: MdxArticleImage }}>
+        <Component />
+      </MDXProvider>
     </article>
   );
 }
