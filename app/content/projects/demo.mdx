@@ -5,6 +5,7 @@ thumbnail: "/static/images/projects/demo.png"
 date: "2026-04-30"
 summary: "This is just a demo article."
 tags: ["test", "demo", "2023"]
+has3dModel: true
 published: true
 ---
 
@@ -15,9 +16,11 @@ export const year = 2023
 It features a constant: {year}.
 
 <img
-  src="/static/images/projects/lain_03.png"
-  alt="Accela pill from Serial Experiments Lain"
+  src="/static/images/icons/lain/lain_03.png"
+  alt="Lain with bear hat"
   style={{ width: '200px', height: 'auto', imageRendering: 'pixelated' }}
 />
+
+<MdxModelViewer src="/static/models/cord_stopper.gltf" alt="Cord stopper 3D model" />
 
 {/* ![Accela pill from Serial Experiments Lain](/static/images/projects/lain_43.png) */}

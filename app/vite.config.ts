@@ -29,6 +29,7 @@ export default defineConfig({
       enforce: 'pre',
       ...mdx({
         remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter],
+        providerImportSource: '@mdx-js/react',
       }),
     },
     react({ include: /\.(jsx|tsx|mdx)$/ }),

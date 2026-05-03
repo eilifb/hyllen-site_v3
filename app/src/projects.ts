@@ -7,6 +7,8 @@ export interface ProjectFrontmatter {
   date: string;
   thumbnail?: string;
   tags?: string[];
+  /** When true, allows `<MdxModelViewer />` and prefetches `@google/model-viewer` bundles. */
+  has3dModel?: boolean;
   published: boolean;
 }
 

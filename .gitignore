@@ -42,3 +42,4 @@ yarn-error.log*
 # Copyright — large binaries not committed
 /app/public/static/audio
 /app/public/static/images
+/app/public/static/models
