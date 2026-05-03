@@ -35,8 +35,12 @@ clean:
 # actual clean command
 	docker rm -f $(CONTAINER_NAME)
 
-# Build image, run container, open site in default browser (Windows)
-test: build
+# Local UI with hot reload — no Docker. Runs app predev (sync-version) then Vite dev server.
+test:
+	cd "$(PWD)app" && npm run dev
+
+# Smoke the production nginx image in Docker, then open the site (Windows browser).
+image-test: build
 	$(MAKE) clean
 	$(MAKE) run
 	@powershell -NoProfile -Command "Start-Sleep -Seconds 1; Start-Process '$(SITE_URL)'"
@@ -56,4 +60,4 @@ push: verify-version-tag build
 info:
 	@echo VERSION=$(VERSION) IMAGE_TAG=$(IMAGE_TAG)
 	@echo IMAGE=$(IMAGE) LATEST_IMAGE=$(LATEST_IMAGE)
-.PHONY: sync-version upversion build run test clean verify-version-tag tag push print
+.PHONY: sync-version upversion build run test image-test clean verify-version-tag tag push print
