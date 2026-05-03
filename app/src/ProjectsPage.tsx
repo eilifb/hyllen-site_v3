@@ -1,17 +1,21 @@
 import { Link } from 'react-router-dom';
-import { publishedProjectArticles } from './generatedProjects';
+import { publishedProjects } from './projects';
 
 export default function ProjectsPage() {
   return (
     <section className="projects-page">
       <h2 className="projects-title">Projects</h2>
       <div className="projects-links">
-        {publishedProjectArticles.length === 0 ? (
+        {publishedProjects.length === 0 ? (
           <p>No published articles yet.</p>
         ) : (
-          publishedProjectArticles.map((article) => (
-            <Link key={article.slug} className="project-link" to={`/projects/${article.slug}`}>
-              {article.title}
+          publishedProjects.map((article) => (
+            <Link
+              key={article.slug}
+              className="project-link"
+              to={`/projects/${article.slug}`}
+            >
+              {article.frontmatter.title}
             </Link>
           ))
         )}

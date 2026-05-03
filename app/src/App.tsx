@@ -1,10 +1,44 @@
 import './App.css';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { Link, Route, Routes, useLocation } from 'react-router-dom';
 import ProjectsPage from './ProjectsPage';
 import ProjectArticlePage from './ProjectArticlePage';
 
-function readInitialThemeMode() {
+type ThemeMode = 'dark' | 'light' | 'auto';
+type SoundName = 'chesto' | 'ikuzeyo';
+
+interface Animation {
+  string: string;
+  sheet: HTMLImageElement;
+  width: number;
+  height: number;
+  xStart: number;
+  yStart: number;
+  yEndOffset: number;
+  xEndOffset: number;
+  nextAnimation: () => string | null;
+  delays: number[];
+  soundclip: SoundName | null;
+}
+
+interface AnimationState {
+  cols: number;
+  currentFrameIndex: number;
+  frameStartTime: number;
+  accumulatedTime: number;
+  currentAnimation: Animation | null;
+  animations: Record<string, Animation>;
+  isFlipped: boolean;
+  canvasOffset: { x: number; y: number };
+  widestSprite: number;
+  tallestSprite: number;
+  /** HiDPI: backing store = logical size x pixelRatio */
+  pixelRatio: number;
+  logicalCanvasW: number;
+  logicalCanvasH: number;
+}
+
+function readInitialThemeMode(): ThemeMode {
   const mode = localStorage.getItem('themeMode');
   if (mode === 'dark' || mode === 'light' || mode === 'auto') return mode;
   const legacy = localStorage.getItem('theme');
@@ -12,7 +46,7 @@ function readInitialThemeMode() {
   return 'dark';
 }
 
-function getResponsiveDefaultScale() {
+function getResponsiveDefaultScale(): number {
   if (typeof window === 'undefined') return 2;
   if (window.innerWidth <= 768) return 1;
   return 2;
@@ -20,9 +54,9 @@ function getResponsiveDefaultScale() {
 
 function App() {
   const location = useLocation();
-  const appVersion = process.env.REACT_APP_VERSION || '0.0.0';
-  const canvasRef = useRef(null);
-  const animationStateRef = useRef({
+  const appVersion = import.meta.env.VITE_APP_VERSION ?? '0.0.0';
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationStateRef: MutableRefObject<AnimationState> = useRef<AnimationState>({
     cols: 10,
     currentFrameIndex: 0,
     frameStartTime: 0,
@@ -33,28 +67,31 @@ function App() {
     canvasOffset: { x: 0, y: 0 },
     widestSprite: 0,
     tallestSprite: 0,
-    /** HiDPI: backing store = logical size × pixelRatio */
     pixelRatio: 1,
     logicalCanvasW: 0,
     logicalCanvasH: 0,
   });
-  const audioRef = useRef({
+  const audioRef = useRef<Record<SoundName, HTMLAudioElement>>({
     chesto: new Audio('/static/audio/chesto.wav'),
     ikuzeyo: new Audio('/static/audio/ikuzeyo.wav'),
   });
 
-  const [themeMode, setThemeMode] = useState(readInitialThemeMode);
-  const [isMuted, setIsMuted] = useState(() => localStorage.getItem('muted') === 'true');
-  const [scale, setScale] = useState(getResponsiveDefaultScale);
-  const [canvasHeight, setCanvasHeight] = useState(200);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
-  const themeDropdownRef = useRef(null);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(readInitialThemeMode);
+  const [isMuted, setIsMuted] = useState<boolean>(
+    () => localStorage.getItem('muted') === 'true',
+  );
+  const [scale, setScale] = useState<number>(getResponsiveDefaultScale);
+  const [canvasHeight, setCanvasHeight] = useState<number>(200);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [themeMenuOpen, setThemeMenuOpen] = useState<boolean>(false);
+  const themeDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const resolve = () => {
+    const resolve = (): 'dark' | 'light' => {
       if (themeMode === 'auto') {
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        return window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light';
       }
       return themeMode;
     };
@@ -83,8 +120,13 @@ function App() {
 
   useEffect(() => {
     if (!themeMenuOpen) return undefined;
-    const onPointerDown = (event) => {
-      if (themeDropdownRef.current && !themeDropdownRef.current.contains(event.target)) {
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (
+        themeDropdownRef.current &&
+        target &&
+        !themeDropdownRef.current.contains(target)
+      ) {
         setThemeMenuOpen(false);
       }
     };
@@ -104,7 +146,7 @@ function App() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return undefined;
     const state = animationStateRef.current;
-    const snapCssPx = (px, dpr) => Math.round(px * dpr) / dpr;
+    const snapCssPx = (px: number, dpr: number) => Math.round(px * dpr) / dpr;
 
     const applyPixelRatioToContext = () => {
       ctx.imageSmoothingEnabled = false;
@@ -112,9 +154,9 @@ function App() {
         ctx.imageSmoothingQuality = 'low';
       }
     };
-    let rafId = null;
+    let rafId: number | null = null;
 
-    const playSound = (name) => {
+    const playSound = (name: SoundName) => {
       if (isMuted) return;
       const audio = audioRef.current[name];
       if (!audio) return;
@@ -155,7 +197,7 @@ function App() {
     };
 
     const stopAnimation = () => {
-      if (rafId) {
+      if (rafId !== null) {
         cancelAnimationFrame(rafId);
         rafId = null;
       }
@@ -194,22 +236,12 @@ function App() {
       const dstW = Math.max(1, Math.ceil(srcW * scale));
       const dstH = Math.max(1, Math.ceil(srcH * scale));
 
-      ctx.drawImage(
-        anim.sheet,
-        srcX,
-        srcY,
-        srcW,
-        srcH,
-        dstX,
-        dstY,
-        dstW,
-        dstH,
-      );
+      ctx.drawImage(anim.sheet, srcX, srcY, srcW, srcH, dstX, dstY, dstW, dstH);
 
       ctx.restore();
     };
 
-    const startAnimation = (name) => {
+    const startAnimation = (name: string) => {
       const baseAnimation = state.animations[name];
       if (!baseAnimation) return;
       stopAnimation();
@@ -224,12 +256,13 @@ function App() {
       rafId = requestAnimationFrame(animationLoop);
     };
 
-    const animationLoop = (timestamp) => {
+    const animationLoop = (timestamp: number) => {
       const anim = state.currentAnimation;
       if (!anim) return;
       if (!state.frameStartTime) state.frameStartTime = timestamp;
 
-      const frameDuration = anim.delays[Math.min(state.currentFrameIndex, anim.delays.length - 1)] || 70;
+      const frameDuration =
+        anim.delays[Math.min(state.currentFrameIndex, anim.delays.length - 1)] || 70;
       state.accumulatedTime += timestamp - state.frameStartTime;
       state.frameStartTime = timestamp;
 
@@ -269,17 +302,18 @@ function App() {
       rafId = requestAnimationFrame(animationLoop);
     };
 
-    const loadDelays = async (jsonPath) => {
+    const loadDelays = async (jsonPath: string): Promise<number[]> => {
       try {
         const response = await fetch(jsonPath);
-        const delays = await response.json();
-        return delays.map((delay) => parseInt(delay, 10));
+        const delays: unknown = await response.json();
+        if (!Array.isArray(delays)) return Array(94).fill(70);
+        return delays.map((delay) => parseInt(String(delay), 10));
       } catch {
         return Array(94).fill(70);
       }
     };
 
-    const loadImage = (path) =>
+    const loadImage = (path: string): Promise<HTMLImageElement> =>
       new Promise((resolve, reject) => {
         const image = new Image();
         image.onload = () => resolve(image);
@@ -288,15 +322,15 @@ function App() {
       });
 
     const loadSprite = async (
-      name,
-      pathname,
-      xStart,
-      yStart,
-      yEndOffset,
-      xEndOffset,
-      nextAnimation,
-      soundclip = null,
-    ) => {
+      name: string,
+      pathname: string,
+      xStart: number,
+      yStart: number,
+      yEndOffset: number,
+      xEndOffset: number,
+      nextAnimation: () => string | null,
+      soundclip: SoundName | null = null,
+    ): Promise<Animation> => {
       const [sheet, delays] = await Promise.all([
         loadImage(`${pathname}_spritesheet.png`),
         loadDelays(`${pathname}_frame_delay.json`),
@@ -306,7 +340,9 @@ function App() {
         string: name,
         sheet,
         width: Math.floor(sheet.width / state.cols),
-        height: Math.floor(sheet.height / Math.max(1, Math.ceil(delays.length / state.cols))),
+        height: Math.floor(
+          sheet.height / Math.max(1, Math.ceil(delays.length / state.cols)),
+        ),
         xStart,
         yStart,
         yEndOffset,
@@ -342,7 +378,6 @@ function App() {
         updateCanvasOffset();
         startAnimation('stance');
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('Failed to initialize sprite animation', error);
       }
     };
@@ -389,13 +424,17 @@ function App() {
     setThemeMenuOpen(false);
   };
 
-  const pickThemeMode = (mode) => {
+  const pickThemeMode = (mode: ThemeMode) => {
     setThemeMode(mode);
     setThemeMenuOpen(false);
   };
 
   const themeToggleIcon =
-    themeMode === 'light' ? 'bi-sun-fill' : themeMode === 'dark' ? 'bi-moon-stars-fill' : 'bi-circle-half';
+    themeMode === 'light'
+      ? 'bi-sun-fill'
+      : themeMode === 'dark'
+        ? 'bi-moon-stars-fill'
+        : 'bi-circle-half';
 
   return (
     <div className="app-root">
@@ -430,7 +469,11 @@ function App() {
         aria-hidden={!sidebarOpen}
       />
 
-      <aside id="site-sidebar" className={`site-sidebar${sidebarOpen ? ' is-open' : ''}`} aria-hidden={!sidebarOpen}>
+      <aside
+        id="site-sidebar"
+        className={`site-sidebar${sidebarOpen ? ' is-open' : ''}`}
+        aria-hidden={!sidebarOpen}
+      >
         <div className="sidebar-inner">
           <div className="sidebar-title">{`Hyllen v${appVersion}`}</div>
           <div className="sidebar-sep" role="separator" />
@@ -444,7 +487,10 @@ function App() {
               aria-label={isMuted ? 'Unmute' : 'Mute'}
               title={isMuted ? 'Unmute' : 'Mute'}
             >
-              <i className={`bi ${isMuted ? 'bi-volume-mute-fill' : 'bi-volume-up-fill'}`} aria-hidden />
+              <i
+                className={`bi ${isMuted ? 'bi-volume-mute-fill' : 'bi-volume-up-fill'}`}
+                aria-hidden
+              />
             </button>
 
             <div className="dropdown sidebar-theme-dropdown" ref={themeDropdownRef}>
@@ -458,7 +504,9 @@ function App() {
               >
                 <i className={`bi ${themeToggleIcon}`} aria-hidden />
               </button>
-              <ul className={`dropdown-menu dropdown-menu-end shadow${themeMenuOpen ? ' show' : ''}`}>
+              <ul
+                className={`dropdown-menu dropdown-menu-end shadow${themeMenuOpen ? ' show' : ''}`}
+              >
                 <li>
                   <button
                     type="button"
@@ -508,7 +556,11 @@ function App() {
 
           <div className="sidebar-sep" role="separator" />
 
-          <Link className="sidebar-link-btn" to="/projects" aria-label="Open projects page">
+          <Link
+            className="sidebar-link-btn"
+            to="/projects"
+            aria-label="Open projects page"
+          >
             <span>Projects</span>
             <i className="bi bi-circle-square" aria-hidden />
           </Link>
@@ -522,7 +574,10 @@ function App() {
             element={
               <div className="home-landing">
                 <section className="animation-section">
-                  <div className="canvas-container" style={{ height: `${canvasHeight}px` }}>
+                  <div
+                    className="canvas-container"
+                    style={{ height: `${canvasHeight}px` }}
+                  >
                     <canvas ref={canvasRef} id="sprite-canvas" />
                   </div>
 
@@ -530,16 +585,28 @@ function App() {
                     <button
                       type="button"
                       className="icon-btn scaledown-btn"
-                      onClick={() => canResize && setScale((prev) => Math.max(0.5, prev - 0.5))}
+                      onClick={() =>
+                        canResize && setScale((prev) => Math.max(0.5, prev - 0.5))
+                      }
                     >
-                      <img src="/static/images/makoto/makoto_face_minus.png" alt="Scale down animation" className="pixel-img button-face" />
+                      <img
+                        src="/static/images/makoto/makoto_face_minus.png"
+                        alt="Scale down animation"
+                        className="pixel-img button-face"
+                      />
                     </button>
                     <button
                       type="button"
                       className="icon-btn scaleup-btn"
-                      onClick={() => canResize && setScale((prev) => Math.min(8, prev + 0.5))}
+                      onClick={() =>
+                        canResize && setScale((prev) => Math.min(8, prev + 0.5))
+                      }
                     >
-                      <img src="/static/images/makoto/makoto_face_plus.png" alt="Scale up animation" className="pixel-img button-face" />
+                      <img
+                        src="/static/images/makoto/makoto_face_plus.png"
+                        alt="Scale up animation"
+                        className="pixel-img button-face"
+                      />
                     </button>
                     <button
                       type="button"
