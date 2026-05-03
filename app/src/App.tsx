@@ -185,6 +185,11 @@ function App() {
   }, [location.pathname]);
 
   useEffect(() => {
+    // Canvas only exists when the '/' route renders. React Router swaps routes
+    // without remounting App, so deps must include pathname — otherwise navigating
+    // back from /<page> leaves a new canvas uninitialized.
+    if (location.pathname !== '/') return undefined;
+
     let isMounted = true;
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
@@ -482,7 +487,7 @@ function App() {
       canvas.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('resize', handleResize);
     };
-  }, [scale]);
+  }, [scale, location.pathname]);
 
   const canResize =
     landingSprites === 'ready' &&
@@ -529,7 +534,11 @@ function App() {
       </button>
 
       <header className="top-bar" aria-label="Site header">
-        <h1 className="site-title">Hyllen</h1>
+        <h1 className="site-title">
+          <Link to="/" onClick={closeSidebar} aria-label="Hyllen, go to home">
+            Hyllen
+          </Link>
+        </h1>
       </header>
 
       <div
@@ -544,7 +553,14 @@ function App() {
         aria-hidden={!sidebarOpen}
       >
         <div className="sidebar-inner">
-          <div className="sidebar-title">{`Hyllen v${appVersion}`}</div>
+          <Link
+            to="/"
+            className="sidebar-title"
+            onClick={closeSidebar}
+            aria-label={`Hyllen home, version ${appVersion}`}
+          >
+            {`Hyllen v${appVersion}`}
+          </Link>
           <div className="sidebar-sep" role="separator" />
 
           <div className="sidebar-actions">
