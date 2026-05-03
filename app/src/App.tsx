@@ -7,6 +7,7 @@ import {
   type MutableRefObject,
 } from 'react';
 import { Link, Route, Routes, useLocation } from 'react-router-dom';
+import NotFoundPage from './NotFoundPage';
 import ProjectsPage from './ProjectsPage';
 import ProjectArticlePage from './ProjectArticlePage';
 
@@ -741,6 +742,7 @@ function App() {
           />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:slug" element={<ProjectArticlePage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
     </div>
