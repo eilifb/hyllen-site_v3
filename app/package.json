@@ -25,13 +25,15 @@
     "jsdom": "^29.1.1",
     "remark-frontmatter": "^5.0.0",
     "remark-mdx-frontmatter": "^5.2.0",
+    "sharp": "^0.34.5",
     "typescript": "^6.0.3",
     "vite": "^8.0.10",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "yaml": "^2.8.4"
   },
   "scripts": {
-    "predev": "node ../scripts/sync-version.js",
-    "prebuild": "node ../scripts/sync-version.js",
+    "predev": "node ../scripts/sync-version.js && node ../scripts/build-project-thumbnails.js",
+    "prebuild": "node ../scripts/sync-version.js && node ../scripts/build-project-thumbnails.js",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

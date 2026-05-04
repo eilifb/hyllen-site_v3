@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { generatedProjectThumbnails } from './generatedProjectThumbnails';
 import { publishedProjects, type ProjectArticle } from './projects';
 
 const UNCATEGORIZED = 'General';
@@ -51,6 +52,9 @@ export default function ProjectsPage() {
           {shelves.map(([label, articles]) => {
             const expanded =
               flyout?.category === label ? articles.find((a) => a.slug === flyout.slug) : undefined;
+            const flyoutThumb = expanded
+              ? (generatedProjectThumbnails[expanded.slug] ?? expanded.frontmatter.thumbnail?.trim() ?? '')
+              : '';
 
             return (
               <div key={label} className="projects-shelf-block">
@@ -60,7 +64,7 @@ export default function ProjectsPage() {
                       {expanded ? (
                         <div
                           className={`projects-shelf-flyout${
-                            expanded.frontmatter.thumbnail?.trim() ? ' projects-shelf-flyout--with-thumb' : ''
+                            flyoutThumb ? ' projects-shelf-flyout--with-thumb' : ''
                           }`}
                           role="presentation"
                         >
@@ -68,19 +72,19 @@ export default function ProjectsPage() {
                             <div className="projects-shelf-flyout-text">
                               <span className="projects-shelf-flyout-title">{expanded.frontmatter.title}</span>
                               {expanded.frontmatter.summary ? (
-                                <span className="projects-shelf-flyout-summary">{expanded.frontmatter.summary}</span>
+                                <span className="projects-shelf-flyout-summary">
+                                  {expanded.frontmatter.summary}
+                                </span>
                               ) : null}
                             </div>
                           </div>
-                          {expanded.frontmatter.thumbnail?.trim() ? (
+                          {flyoutThumb ? (
                             <div
                               className="projects-shelf-flyout-thumb"
                               aria-hidden
                               style={
                                 {
-                                  ['--project-thumb' as string]: `url(${JSON.stringify(
-                                    expanded.frontmatter.thumbnail.trim(),
-                                  )})`,
+                                  ['--project-thumb' as string]: `url(${JSON.stringify(flyoutThumb)})`,
                                 } as CSSProperties
                               }
                             />
