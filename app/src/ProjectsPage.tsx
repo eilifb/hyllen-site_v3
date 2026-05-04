@@ -90,64 +90,60 @@ export default function ProjectsPage() {
       ) : (
         <div className="projects-wall-board">
           {shelves.map(([label, articles]) => {
-            const expanded =
-              flyout?.category === label ? articles.find((a) => a.slug === flyout.slug) : undefined;
-            const flyoutThumb = expanded
-              ? (generatedProjectThumbnails[expanded.slug] ?? expanded.frontmatter.thumbnail?.trim() ?? '')
-              : '';
-
             return (
               <div key={label} className="projects-shelf-block">
                 <div className="projects-shelf-track" onMouseLeave={hideFlyout}>
                   <div className="projects-shelf-inner">
                     <div className="projects-shelf-deck">
-                      {expanded ? (
-                        <div
-                          className={`projects-shelf-flyout${
-                            flyoutThumb ? ' projects-shelf-flyout--with-thumb' : ''
-                          }`}
-                          role="presentation"
-                        >
-                          <div className="projects-shelf-flyout-inner">
-                            <div className="projects-shelf-flyout-text">
-                              <span className="projects-shelf-flyout-title">{expanded.frontmatter.title}</span>
-                              {expanded.frontmatter.summary ? (
-                                <span className="projects-shelf-flyout-summary">
-                                  {expanded.frontmatter.summary}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                          {flyoutThumb ? (
-                            <div
-                              className="projects-shelf-flyout-thumb"
-                              aria-hidden
-                              style={
-                                {
-                                  ['--project-thumb' as string]: `url(${JSON.stringify(flyoutThumb)})`,
-                                } as CSSProperties
-                              }
-                            />
-                          ) : null}
-                        </div>
-                      ) : null}
                       <div className="projects-shelf-boxes">
-                        {articles.map((article) => (
-                          <Link
-                            key={article.slug}
-                            className={`project-box${flyout?.slug === article.slug ? ' project-box--active' : ''}`}
-                            to={`/projects/${article.slug}`}
-                            onMouseEnter={() => showFlyout(label, article.slug)}
-                            onFocus={() => showFlyout(label, article.slug)}
-                            onBlur={(e) => {
-                              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-                                hideFlyout();
+                        {articles.map((article) => {
+                          const isActive = flyout?.slug === article.slug;
+                          const thumb =
+                            (generatedProjectThumbnails[article.slug] ??
+                              article.frontmatter.thumbnail?.trim() ??
+                              '') as string;
+                          return (
+                            <Link
+                              key={article.slug}
+                              className={`project-box${isActive ? ' project-box--active' : ''}${
+                                thumb ? ' project-box--with-thumb' : ''
+                              }`}
+                              to={`/projects/${article.slug}`}
+                              onMouseEnter={() => showFlyout(label, article.slug)}
+                              onFocus={() => showFlyout(label, article.slug)}
+                              onBlur={(e) => {
+                                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                                  hideFlyout();
+                                }
+                              }}
+                              style={
+                                thumb
+                                  ? ({
+                                      ['--project-thumb' as string]: `url(${JSON.stringify(thumb)})`,
+                                    } as CSSProperties)
+                                  : undefined
                               }
-                            }}
-                          >
-                            <span className="project-box-title">{article.frontmatter.title}</span>
-                          </Link>
-                        ))}
+                            >
+                              <span className="project-box-title">{article.frontmatter.title}</span>
+                              <span className="project-box-expanded-content" aria-hidden={!isActive}>
+                                <span className="project-box-expanded-text">
+                                  <span className="project-box-expanded-title">{article.frontmatter.title}</span>
+                                  {article.frontmatter.summary ? (
+                                    <span className="project-box-expanded-summary">
+                                      {article.frontmatter.summary}
+                                    </span>
+                                  ) : null}
+                                </span>
+                              </span>
+                              {thumb ? (
+                                <span
+                                  className="project-box-expanded-thumb"
+                                  aria-hidden={!isActive}
+                                />
+                              ) : null}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                     <div className="projects-shelf-plank">
