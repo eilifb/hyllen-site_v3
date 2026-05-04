@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { generatedProjectThumbnails } from './generatedProjectThumbnails';
 import { publishedProjects, type ProjectArticle } from './projects';
@@ -16,6 +16,46 @@ type Flyout = { category: string; slug: string };
 
 export default function ProjectsPage() {
   const [flyout, setFlyout] = useState<Flyout | null>(null);
+  const thumbnailUrls = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          publishedProjects
+            .map((article) =>
+              (generatedProjectThumbnails[article.slug] ?? article.frontmatter.thumbnail?.trim() ?? '').trim(),
+            )
+            .filter(Boolean),
+        ),
+      ),
+    [],
+  );
+
+  useEffect(() => {
+    if (thumbnailUrls.length === 0) return;
+
+    const preload = () => {
+      for (const src of thumbnailUrls) {
+        const img = new Image();
+        img.decoding = 'async';
+        img.src = src;
+      }
+    };
+
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    if (typeof win.requestIdleCallback === 'function') {
+      const id = win.requestIdleCallback(preload, { timeout: 1200 });
+      return () => {
+        if (typeof win.cancelIdleCallback === 'function') win.cancelIdleCallback(id);
+      };
+    }
+
+    const timer = window.setTimeout(preload, 120);
+    return () => window.clearTimeout(timer);
+  }, [thumbnailUrls]);
 
   const shelves = useMemo(() => {
     const map = new Map<string, ProjectArticle[]>();
