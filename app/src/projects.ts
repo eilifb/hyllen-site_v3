@@ -3,6 +3,8 @@ import type { ComponentType } from 'react';
 export interface ProjectFrontmatter {
   title: string;
   slug: string;
+  /** Shelf drawer group on /projects. Omit or empty → "General". */
+  category?: string;
   summary?: string;
   date: string;
   thumbnail?: string;
