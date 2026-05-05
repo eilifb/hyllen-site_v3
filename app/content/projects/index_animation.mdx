@@ -10,9 +10,30 @@ has3dModel: false
 published: true
 ---
 
-// import remarkMath from 'remark-math'
+export const d = new Date();
+export const year = d.getFullYear();
 
 # {frontmatter.title}
 
+{< img src="/static/images/makoto/gifs/makoto-stance.gif" alt="Makoto idle animation" />}
+{< img src="/static/images/makoto/gifs/makoto-hayate-startup.gif" alt="Makoto idle animation" />}
+{< img src="/static/images/makoto/gifs/makoto-hayate-windup.gif" alt="Makoto idle animation" />}
+{< img src="/static/images/makoto/gifs/makoto-stance.gif" alt="Makoto idle animation" />}
+{< img src="/static/images/makoto/gifs/makoto-stance.gif" alt="Makoto idle animation" />}
+{< img src="/static/images/makoto/gifs/makoto-stance.gif" alt="Makoto idle animation" />}
+
 This animation was orginially part of a `v2` version of the site
-(`v1` is a 3 year old project that I think didnt get any further than CRA init),
+(`v1` is a ~{year - 2023} year old project that I think didnt get
+any further than `npx create-react-app hyllen-site`), that I made about
+{year - 2025} year{year - 2025 > 1 ? 's' : ''} ago.
+
+Documentation wasn't a high priority so I have to go by memory,
+but if I remember correctly the first iteration used a `.gif` file, extracted
+from the excelent SFIII resource [http://ensabahnur.free.fr](http://ensabahnur.free.fr/BastonNew/index.php).
+I was (am) new to web development so it took a while to get things to work,
+and even when I got it to work there were plent of limitations.
+
+The idle animation had to play to completion before it reacted to the user's
+click and transition to the next animation.
+The animation playback speed was off (had no clue `.gif` supported frame delays between images).
+It featured no interactivity other than playing out the animations one by one, each to completion.
