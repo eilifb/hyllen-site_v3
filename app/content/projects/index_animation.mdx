@@ -1,0 +1,239 @@
+---
+title: "How I made the Makoto animation"
+slug: "index_animation"
+category: "Programming"
+thumbnail: "/static/images/projects/makoto_animation_thumbnail.png"
+created: "2026-05-03"
+updated: "2026-05-19"
+summary: "How the interactive animation on the index page came to be"
+tags: ["animation", "sfIII", "makoto", "web development"]
+has3dModel: false
+published: true
+---
+
+export const d = new Date();
+export const year = d.getFullYear();
+
+# {frontmatter.title}
+
+<div className="mdx-figure-grid">
+  <figure>
+    <img src="/static/images/makoto/gifs/makoto-stance-resize.gif" alt="The Makoto idle animation" />
+    <figcaption>Idle</figcaption>
+  </figure>
+  <figure>
+    <img src="/static/images/makoto/gifs/makoto-hayate-startup.gif" alt="The Makoto hayate startup animation" />
+    <figcaption>Startup</figcaption>
+  </figure>
+  <figure>
+    <img src="/static/images/makoto/gifs/makoto-hayate-windup.gif" alt="The Makoto hayate windup animation" />
+    <figcaption>Windup</figcaption>
+  </figure>
+  <figure>
+    <img src="/static/images/makoto/gifs/makoto-hayate-hold.gif" alt="The Makoto hayate hold animation" />
+    <figcaption>Hold</figcaption>
+  </figure>
+  <figure>
+    <img src="/static/images/makoto/gifs/makoto-hayate-end.gif" alt="The Makoto hayate end animation" />
+    <figcaption>End</figcaption>
+  </figure>
+</div>
+
+I always found web development interesting, there is something to the very tangible results it can give.
+Around 2025 I found myself with some free time, a recently bought domain name and a home server to host it on.  
+I was playing Street Fighter III at the time and thought that a homage to the beautiful art in that game would be a good way to get some experience as well as give my website an immediately recognizable personality.
+This project has gone through several iterations over the years, from an early, unserious, `v1` some ~{year - 2023} years ago 
+(Never came further than `npm create-react-app hyllen-site` IIRC) to the actual `v2` attempt in 2025, where I did the bulk of the work.  
+Documentation was apparently a low priority for me then, so I have to go by memory. So sorry if this is a bit messy.
+
+### Website animations = .gifs, right?
+Initially I was quite surprised over how complicated this was to get working.
+My first idea was to simply loop a .gif, the Idle animation, and then one by one
+play the following animations if somebody clicked on it. I retrieved the `.gif`'s from the excellent SFIII resource [ensabahnur](http://ensabahnur.free.fr/BastonNew/index.php).  
+Perhaps a naive, "2010" understanding of website design, but the logic was something like "the goal of the project is simple and thus a simple solution should suffice".  
+However, problems quickly piled up:  
+Transitions between the different parts of the animation
+were jagged and it was a pain to account for all the interactivity, like how to move the animation around the screen in a convincing manner. And apparently GIFs support delay between frames?
+I had no clue that was a feature, and no matter the amount of workarounds and supporting code and HTML I made, it still looked all kinds of "off".  
+So after a quick read and a couple of Google searches I scrapped the gif "system" and transitioned to use spritesheets and a `<canvas>` instead.
+
+### On spritesheets
+<div className="mdx-figure-grid mdx-figure-grid--wide">
+  <figure>
+    <div className="mdx-asset-panel">
+      <img
+        src="/static/images/makoto/makoto-hayate_spritesheet_example.png"
+        alt="Makoto hayate spritesheet"
+      />
+    </div>
+    <figcaption>Spritesheet example containing 94 frames. If you imagine that you took a screenshot of each still picture in one of the gifs above and glued them together in a collage, you would get that `.gif`'s "spritesheet".</figcaption>
+  </figure>
+  <figure>
+    <pre className="mdx-inline-code mdx-asset-panel">
+      <code>
+{`[
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    "100",
+    ...,
+]`}
+      </code>
+    </pre>
+    <figcaption>Frame delays/Frame times — milliseconds per frame (from the .json file)</figcaption>
+  </figure>
+</div>
+
+As seen above, each spritesheet has a corresponding `.json` file that has a list of all the frame times.
+I switched from using an `<img>` tag to a `<canvas>` tag and used JavaScript logic to only draw a portion of the spritesheet at a time.
+
+Each spritesheet was represented in code as an object with variables defining things like how many sprites the sheet contained, where the canvas should end up after playing the animation,
+what spritesheet to load next after the animation completed and so on.
+
+<figure>
+<pre className="language-javascript">
+  <code>
+{`let currentAnimation = {
+  string: "",
+  running: false,
+  frameId: null,
+  timeout: null,
+  sheet: null,
+  width: 0,
+  height: 0,
+  x_start: 0,
+  y_start: 0,
+  x_end_offset: 0,
+  y_end_offset: 0,
+  counter: 0,
+  next_animation: function () {
+    return null;
+  },
+  soundclip: null,
+  delays: []
+};`}
+  </code>
+</pre>
+  <figcaption>What the spritesheet object looked like in `v2`</figcaption>
+</figure>
+<figure>
+<pre className="mdx-inline-code mdx-asset-panel">
+  <code>
+{`
+  loadSprite("end", "/static/images/makoto/makoto-hayate-end", 0, 0, 0, 93, () => "stance", "chesto")
+
+
+  async function loadSprite(name, pathname, x_start, y_start, y_end_offset, x_end_offset, next_animation, soundclip) {
+
+    // Create spritesheets
+    const spriteSheet = new Image();
+    spriteSheet.src = pathname + "_spritesheet.png";
+
+    const delays = await loadDelays(pathname + "_frame_delay.json")
+    if (soundclip) {
+        console.debug("adding soundclip", soundclip, "to", name)
+    }
+    return {
+        string: name,
+        timeout: null,
+        sheet: spriteSheet,
+        width: Math.floor(spriteSheet.width / 10),
+        height: spriteSheet.height / Math.ceil(delays.length / 10),
+        x_start: x_start,
+        y_start: y_start,
+        y_end_offset: y_end_offset,
+        x_end_offset: x_end_offset, // Should be 96, dunno why it isn't.
+        next_animation: next_animation,
+        delays: delays,
+        soundclip: soundclip
+    }
+  }
+`}
+
+
+  </code>
+</pre>
+  <figcaption>Example of what loading the `end` animation looked like in `v2`</figcaption>
+</figure>
+
+The logic was based around `window.requestAnimationFrame()`, a browser API that calls a function `animationLoop()` each time the display refreshes.
+`animationLoop()` checks time elapsed against the frame time for the current frame, and if the time elapsed is greater than the frame time the script moves what part of the spritesheet is drawn
+(with some extra logic accounting for interactivity).
+In addition there were more helper functions to handle special cases like the first page load, sound etc.
+
+<div className="mdx-figure-grid mdx-figure-grid--wide">
+<figure>
+<div className="mdx-asset-panel">
+    <img src="/static/images/makoto/makoto-hayate_spritesheet_render_example_1.png" alt="Cut out of the Makoto Hayate spritesheet showing the current frame being drawn" />
+    </div>
+    <figcaption>The canvas is represented as a green square here. Although technically the entire spritesheet is loaded, only a small portion (a single frame, represented as the red square) is drawn at one time.  </figcaption>
+</figure>
+<figure>
+<div className="mdx-asset-panel">
+    <img src="/static/images/makoto/makoto-hayate_spritesheet_render_example_2.png" alt="Cut out of the Makoto Hayate spritesheet showing the next frame being drawn" />
+    </div>
+    <figcaption>
+      Say the frame time, as specified in the corresponding .json file, is 100ms. A common display is 60Hz, which means that it refreshes every ~16.67ms.
+      That means the 6th time the display refreshes (6*16.67ms = 100.02ms) the time elapsed is greater than the frame time and the script draws the next frame from the spritesheet.
+    </figcaption>
+</figure>
+  </div>
+
+So far so good, right? Well, not quite. While most of the initial issues were solved, others had cropped up.
+The biggest was that the canvas would sometimes simply not load. Just a blank screen.
+Was it some Firefox incompatibility? A misconfigured Proxy Manager? Cloudflare not set up correctly?
+Or was my internet speed or disk speed simply not up to snuff?
+Or the most likely culprit, my own incompetence when it comes to web development.
+I managed code directly regarding the logic of the animation just fine, "When user clicks **x**, function **y** is called, does some math and changes the canvas thusly...", etc.  
+But anything deeper than that proved troublesome.
+I was also inexperienced with self-hosting and Unraid so from my perspective the issues could potentially have nothing to do with the code itself.
+All of these factors, combined with other matters in my life taking precedence, meant that the project went to the "will get to that later" pile.  
+And so it was for the next year or two.
+
+### The 3rd (4th? 5th?) attempt
+Enter 2026. A bit behind trends, I was getting curious about the potential of AI agents, and their ability to accelerate coding projects.
+I was a lot more comfortable with self-hosting and Unraid, and thought that a website would be the perfect way to both showcase the various projects I have done and was doing, and to test the waters with AI agents.
+So I downloaded Cursor, bought a month's subscription, and asked it: "Take this project, refactor it to React and fix the issues I've had."
+I will let Cursor speak on what it did next:
+
+<div className="mdx-alt-voice">
+
+### Bringing the animation back (2026 port)
+
+The interaction is the same as before: idle stance, click for the hayate chain, release for `end`, drift and flip at the screen edges, scale only while idle, same sounds.
+
+What actually changed on the animation side:
+
+- **Sprites load before use** — each sheet and its delay JSON are awaited together; the old version could measure the image before it finished loading, which may explain the blank canvas.
+- **Sharper drawing** — the canvas uses a higher-resolution backing store on HiDPI displays, pixel smoothing stays off, and frames are sampled with a small inset so neighbours do not bleed through.
+- **Cleaner motion** — the canvas is centred in its box before applying walk offsets; edge flip uses the viewport width, not the full monitor width.
+- **Startup is more forgiving** — if one asset fails, the rest can still load; the page can show a simple message when files are missing instead of an empty box.
+
+</div>
+And it pretty much worked straight away.  
+There was a bit of back and forth of course, specifying exactly what I wanted and squashing bugs as they popped up, but the process was overall smooth. I think I had a working website, 
+animation and all, in less than a day (I like to believe that it went so smoothly because the groundwork I had laid in `v2` was so solid).  
+As you might be able to tell from my language there are some clear drawbacks though.
+For example I knew next to nothing about React before starting this project, and "I" made the current working version without **needing** to learn much either.  
+This is cliché, obvious and has probably already been discussed to death, but it really is a double-edged sword.  
+Yes, it takes away a lot of the frustration of being stuck on something for hours (or years...), but you can also get stuck in a situation where you don't know how anything "you" made works. And what do you do
+if a real problem crops up?  
+It kind of made me reconsider what I like about coding to begin with. Is it tinkering with stuff and figuring out how things work, or is it more about the result, creating something visible, functional and tangible?  
+All this is to say I have some React documentation reading to do.
+
+### And so
+There you have it. The general outline at least. Perfect? No. But it works well enough, and I consider the original goal of "introduction to web development" achieved.  
+Looking back I'm not sure there is much I would change on how I approached this project. Giving it a bit of thought I think the key takeaway is to have a very clear-cut goal,
+that is also not overly ambitious. A revolutionary revelation, right?  
+"I want to make a website. It needs to have an animation that the user can click to change" requires a non-trivial amount of work and understanding, but it makes way for a fast iteration process, where it's easy to see whether or not 
+the work you do is getting you closer to that goal. Well, most of the time anyway...  
+Thanks for reading! <img src="/static/images/icons/lain/lain_05.png" alt="Icon of Arisu smiling" />
+
+#### P.S.  
+Although Cursor and I mostly get along, there are still some differences in opinion  
+(greyed out is what the AI suggested I should write). <img src="/static/images/projects/really_cursor.png" alt="Cursor suggests that I should write that it did most of the work"/>
