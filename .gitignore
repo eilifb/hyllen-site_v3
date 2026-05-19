@@ -38,6 +38,7 @@ yarn-error.log*
 /todo.md
 /local_scripts
 /deploy.md
+/app/content/projects/animation_timeline.mdx
 
 # Copyright — large binaries not committed
 /app/public/static/audio
