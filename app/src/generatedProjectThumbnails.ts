@@ -2,5 +2,5 @@
 export const generatedProjectThumbnails: Record<string, string> = {
   "demo": "/static/images/generated/project-thumbs/demo.webp",
   "demo2": "/static/images/generated/project-thumbs/demo2.webp",
-  "animation": "/static/images/generated/project-thumbs/animation.webp"
+  "index_animation": "/static/images/generated/project-thumbs/index_animation.webp"
 };
