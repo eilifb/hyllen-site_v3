@@ -83,7 +83,7 @@ export default function ProjectsPage() {
   return (
     <section className="projects-page projects-wall">
       <h2 className="projects-wall-title">Projects</h2>
-      <p className="projects-wall-intro">Boxes on the shelf — hover a box to open it along the plank.</p>
+      <p className="projects-wall-intro">Click or hover on one of the boxes for more.</p>
 
       {shelves.length === 0 ? (
         <p>No published articles yet.</p>
