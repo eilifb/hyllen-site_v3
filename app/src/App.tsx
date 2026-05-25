@@ -7,6 +7,7 @@ import {
   type MutableRefObject,
 } from 'react';
 import { Link, Route, Routes, useLocation } from 'react-router-dom';
+import HomeRecentProjects from './HomeRecentProjects';
 import NotFoundPage from './NotFoundPage';
 import ProjectsPage from './ProjectsPage';
 import ProjectArticlePage from './ProjectArticlePage';
@@ -534,12 +535,16 @@ function App() {
         )}
       </button>
 
-      <header className="top-bar" aria-label="Site header">
+      <header
+        className={`top-bar${location.pathname === '/' ? ' top-bar--home' : ''}`}
+        aria-label="Site header"
+      >
         <h1 className="site-title">
           <Link to="/" onClick={closeSidebar} aria-label="Hyllen, go to home">
             Hyllen
           </Link>
         </h1>
+        {location.pathname === '/' ? <HomeRecentProjects placement="header" /> : null}
       </header>
 
       <div
@@ -659,6 +664,7 @@ function App() {
             path="/"
             element={
               <div className="home-landing">
+                <div className="home-landing-spacer" aria-hidden />
                 <section className="animation-section">
                   {landingSprites === 'missing' ? (
                     <p className="animation-fallback" role="note">

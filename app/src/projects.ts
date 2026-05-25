@@ -55,6 +55,12 @@ export const publishedProjects: ProjectArticle[] = allProjects
   .filter((p) => p.frontmatter.published)
   .sort((a, b) => projectSortKey(b.frontmatter).localeCompare(projectSortKey(a.frontmatter)));
 
+/** Newest published articles first (for home “recent” list, etc.). */
+export function getRecentPublishedProjects(limit = 3): ProjectArticle[] {
+  if (limit <= 0) return [];
+  return publishedProjects.slice(0, limit);
+}
+
 export function getPublishedProjectBySlug(slug: string): ProjectArticle | null {
   return publishedProjects.find((p) => p.slug === slug) ?? null;
 }
